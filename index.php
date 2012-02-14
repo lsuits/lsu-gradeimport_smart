@@ -77,8 +77,10 @@ if ($form_data = $file_form->get_data()) {
 
     $data = array('messages' => $messages);
 
-    $results_form = new smart_results_form(null, $data);
-    $results_form->display();
+    if ($messages) {
+        $results_form = new smart_results_form(null, $data);
+        $results_form->display();
+    }
 
     $url = new moodle_url('/grade/index.php', array('id' => $id));
     echo $OUTPUT->continue_button($url);
