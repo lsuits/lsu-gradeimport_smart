@@ -57,6 +57,30 @@ abstract class SmartFileBase {
         return array_keys($this->ids_to_grades);
     }
 
+    public function get_keypad_users($roleids, $context) {
+        global $CFG;
+
+        require_once $CFG->dirroot . '/enrol/ues/publiclib.php';
+        ues::require_daos();
+
+        $params = ues::where()->user_keypadid->in(array_keys($this->ids_to_grades));
+
+        $cps_data = ues_user::get_all($params, true);
+
+        $role_userids = get_role_users($roleids, $context, false, 'u.id');
+
+        $users = array();
+
+        foreach ($role_userids as $id => $obj) {
+            if (!isset($cps_data[$id])) {
+                continue;
+            }
+            $users[$id] = $cps_data[$id];
+        }
+
+        return $users;
+    }
+
     // Takes $ids_to_grades and fills $moodle_ids_to_grades.
     public function convert_ids() {
         global $CFG;
@@ -68,28 +92,11 @@ abstract class SmartFileBase {
         $moodle_ids_to_field = array();
 
         // Keypadid temp fix
-        /*
-        if ($this->get_field() == 'keypadid') {
-            $keypadids = implode("','", array_keys($this->ids_to_grades));
-            $sql = "SELECT moodleid, keypadid FROM mdl_block_courseprefs_users WHERE
-                    keypadid in ('$keypadids')";
-
-            $cps_data = get_records_sql($sql);
-
-            $role_userids = get_role_users($roleids, $context, false, 'u.id');
-
-            $users = array();
-
-            foreach ($role_userids as $id => $obj) {
-                $users[$id] = $cps_data[$id];
-            }
+        if ($this->get_field() == 'user_keypadid') {
+            $users = $this->get_keypad_users($roleids, $context);
         } else {
             $users = get_role_users($roleids, $context, false, 'u.id, u.' . $this->get_field());
         }
-        */
-
-        $users = get_role_users($roleids, $context, false, 'u.id, u.' . $this->get_field());
-        // End keypadid temp fix
 
         foreach ($users as $k => $v) {
             $field = $this->get_field();
@@ -475,7 +482,7 @@ class SmartFileMaple extends SmartFileBase {
 // 170E98,30
 // 1718C0,80
 class SmartFileKeypadidCSV extends SmartFileBase {
-    protected $field = 'keypadid';
+    protected $field = 'user_keypadid';
 
     static function validate_line($line) {
         $fields = explode(',', $line);
@@ -497,7 +504,7 @@ class SmartFileKeypadidCSV extends SmartFileBase {
 // 170E98  30
 // 1718C0  80
 class SmartFileKeypadidTabbed extends SmartFileBase {
-    protected $field = 'keypadid';
+    protected $field = 'user_keypadid';
 
     static function validate_line($line) {
         $fields = explode("\t", $line);
