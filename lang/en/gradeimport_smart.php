@@ -2,6 +2,7 @@
 
 // General
 $string['pluginname'] = 'Smart file';
+$string['smart:view'] = 'View the Smart file importer';
 
 // Import Form
 $string['file'] = 'File';
