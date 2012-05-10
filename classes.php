@@ -67,7 +67,7 @@ abstract class SmartFileBase {
 
         $cps_data = ues_user::get_all($params, true);
 
-        $role_userids = get_role_users($roleids, $context, false, 'u.id');
+        $role_userids = get_role_users($roleids, $context, false);
 
         $users = array();
 
@@ -95,7 +95,7 @@ abstract class SmartFileBase {
         if ($this->get_field() == 'user_keypadid') {
             $users = $this->get_keypad_users($roleids, $context);
         } else {
-            $users = get_role_users($roleids, $context, false, 'u.id, u.' . $this->get_field());
+            $users = get_role_users($roleids, $context, false);
         }
 
         foreach ($users as $k => $v) {
