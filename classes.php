@@ -63,15 +63,18 @@ abstract class SmartFileBase {
         require_once $CFG->dirroot . '/enrol/ues/publiclib.php';
         ues::require_daos();
 
-        $params = ues::where()->user_keypadid->in(array_keys($this->ids_to_grades));
+        $role_users = get_role_users($roleids, $context, false);
+        $role_userids = array_keys($role_users);
+
+        $params = ues::where()
+            ->id->in($role_userids)
+            ->user_keypadid->in(array_keys($this->ids_to_grades));
 
         $cps_data = ues_user::get_all($params, true);
 
-        $role_userids = get_role_users($roleids, $context, false);
-
         $users = array();
 
-        foreach ($role_userids as $id => $obj) {
+        foreach ($role_userids as $id) {
             if (!isset($cps_data[$id])) {
                 continue;
             }
@@ -500,21 +503,21 @@ class SmartFileKeypadidCSV extends SmartFileBase {
 }
 
 
-// Grade file with tabbed values keyed with keypadid
+// Grade file with tabbed or spaced values keyed with keypadid
 // 170E98  30
 // 1718C0  80
 class SmartFileKeypadidTabbed extends SmartFileBase {
     protected $field = 'user_keypadid';
 
     static function validate_line($line) {
-        $fields = explode("\t", $line);
+        $fields = preg_split('/\s+/', $line);
 
         return count($fields) == 2 && smart_is_keypadid($fields[0]) && is_numeric($fields[1]);
     }
 
     function extract_data() {
         foreach ($this->file_contents as $line) {
-            $fields = explode("\t", $line);
+            $fields = preg_split('/\s+/', $line);
             $this->ids_to_grades[$fields[0]] = $fields[1];
         }
     }
