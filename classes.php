@@ -58,30 +58,27 @@ abstract class SmartFileBase {
     }
 
     public function get_keypad_users($roleids, $context) {
-        global $CFG;
+        global $DB;
 
-        require_once $CFG->dirroot . '/enrol/ues/publiclib.php';
-        ues::require_daos();
+        $strings = function($id) { return "'$id'"; };
 
         $role_users = get_role_users($roleids, $context, false);
-        $role_userids = array_keys($role_users);
+        $role_userids = implode(',', array_keys($role_users));
 
-        $params = ues::where()
-            ->id->in($role_userids)
-            ->user_keypadid->in(array_keys($this->ids_to_grades));
+        $keyids = array_keys($this->ids_to_grades);
+        $keys = implode(',', array_map($strings, $keyids));
 
-        $cps_data = ues_user::get_all($params, true);
+        $sql = 'SELECT u.*, d.data AS user_keypadid
+            FROM {user} u, {user_info_data} d
+            WHERE d.userid = u.id
+              AND d.fieldid = :fieldid
+              AND d.data IN (' . $keys . ')
+              AND u.id IN (' . $role_userids . ')';
 
-        $users = array();
+        $profileid = get_config('smart_import', 'keypadprofile');
+        $params = array('fieldid' => $profileid);
 
-        foreach ($role_userids as $id) {
-            if (!isset($cps_data[$id])) {
-                continue;
-            }
-            $users[$id] = $cps_data[$id];
-        }
-
-        return $users;
+        return $DB->get_records_sql($sql, $params);
     }
 
     // Takes $ids_to_grades and fills $moodle_ids_to_grades.

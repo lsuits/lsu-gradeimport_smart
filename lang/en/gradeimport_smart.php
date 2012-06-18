@@ -18,4 +18,10 @@ $string['bad_userid'] = '{$a} is not currently enrolled in this course and was s
 $string['success'] = 'Grades were successfully imported';
 $string['failure'] = 'An error has occurred';
 
+// Settings
+$string['keypadprofile'] = 'Keypad profile ID';
+$string['keypadprofile_help'] = 'If the importer detects a file that uses the
+clicker IDs of the student, then the importer will map users who have data in
+this custom Moodle user data.';
+
 ?>
