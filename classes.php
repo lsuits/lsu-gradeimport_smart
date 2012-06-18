@@ -164,7 +164,7 @@ abstract class SmartFileBase {
                 }
             }
 
-            $result = $grade_item->update_final_grade($userid, $grade, 'import', $USER->id);
+            $result = $grade_item->update_final_grade($userid, $grade, 'import');
         }
 
         return true;
