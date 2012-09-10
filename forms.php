@@ -35,12 +35,12 @@ class smart_file_form extends moodleform {
         $params = array('courseid' => $COURSE->id, 'locked' => False);
 
         $items = $DB->get_records('grade_items', $params, 'itemname asc',
-            'id, itemname, itemtype');
+            'id, gradetype, itemname, itemtype');
 
         $options = array();
 
         foreach ($items as $n => $item) {
-            if ($item->itemtype == 'manual') {
+            if ($item->itemtype == 'manual' and $item->gradetype > 0) {
                 $options[$item->id] = $item->itemname;
             }
         }
