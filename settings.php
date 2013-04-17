@@ -13,5 +13,10 @@ if ($ADMIN->fulltree) {
             get_string('keypadprofile_help', 'gradeimport_smart'),
             $default, $fields)
         );
+        $settings->add(new admin_setting_configselect('smart_import/anonprofile',
+            get_string('anonprofile', 'gradeimport_smart'),
+            get_string('anonprofile_help', 'gradeimport_smart'),
+            $default, $fields)
+        );
     }
 }

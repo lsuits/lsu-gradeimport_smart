@@ -81,6 +81,30 @@ abstract class SmartFileBase {
         return $DB->get_records_sql($sql, $params);
     }
 
+    public function get_anon_users($roleids, $context) {
+        global $DB;
+
+        $strings = function($id) { return "'$id'"; };
+
+        $role_users = get_role_users($roleids, $context, false);
+        $role_userids = implode(',', array_keys($role_users));
+
+        $keyids = array_keys($this->ids_to_grades);
+        $keys = implode(',', array_map($strings, $keyids));
+
+        $sql = 'SELECT u.*, d.data AS user_anonid
+            FROM {user} u, {user_info_data} d
+            WHERE d.userid = u.id
+              AND d.fieldid = :fieldid
+              AND d.data IN (' . $keys . ')
+              AND u.id IN (' . $role_userids . ')';
+
+        $profileid = get_config('smart_import', 'anonprofile');
+        $params = array('fieldid' => $profileid);
+
+        return $DB->get_records_sql($sql, $params);
+    }
+
     // Takes $ids_to_grades and fills $moodle_ids_to_grades.
     public function convert_ids() {
         global $CFG;
@@ -94,6 +118,13 @@ abstract class SmartFileBase {
         // Keypadid temp fix
         if ($this->get_field() == 'user_keypadid') {
             $users = $this->get_keypad_users($roleids, $context);
+        } else {
+            $users = get_role_users($roleids, $context, false);
+        }
+
+        // Anonid temp fix
+        if ($this->get_field() == 'user_anonid') {
+            $users = $this->get_anon_users($roleids, $context);
         } else {
             $users = get_role_users($roleids, $context, false);
         }
@@ -258,11 +289,11 @@ class SmartFileMEC extends SmartFileBase {
 // XXXX,100.00
 // XXXX, 90.00
 class SmartFileAnonymous extends SmartFileBase {
-    protected $field = 'anonymous';
+    protected $field = 'user_anonid';
 
     static function validate_line($line) {
         $fields = array_map('trim', explode(',', $line));
-        return smart_is_anon_num($fields[0]) && is_grade($fields[1]) && count($fields) == 2;
+        return smart_is_anon_num($fields[0]) && smart_is_grade($fields[1]) && count($fields) == 2;
     }
 
     function extract_data() {
