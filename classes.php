@@ -167,18 +167,30 @@ abstract class SmartFileBase {
         return true;
     }
 
-    abstract public static function validate_line($line);
+    abstract public function validate_line($line);
 
     abstract protected function extract_data();
+}
+
+abstract class SmartFile_GradeEnd_extractor extends SmartFileBase{
+    public $separator;
+    
+    protected function extract_data() {
+        foreach ($this->file_contents as $line) {
+            $fields = explode($this->separator, $line);
+            $this->ids_to_grades[$fields[0]] = trim(end($fields));
+        }
+    }
 }
 
 // Fixed width grade file.
 // 89XXXXXXX 100.00
 // 89XXXXXXX 090.00
-class SmartFileFixed extends SmartFileBase {
+class SmartFileFixed extends SmartFile_GradeEnd_extractor {
     protected $field = 'idnumber';
-
-    static function validate_line($line) {
+    public $separator = ' ';
+    
+    public function validate_line($line) {
         if (smart_is_lsuid2(substr($line, 0, 9))) {
             if (strlen(trim($line)) == 16 && count(explode(' ', $line)) == 2) {
                 return True;
@@ -189,22 +201,17 @@ class SmartFileFixed extends SmartFileBase {
 
         return False;
     }
-
-    function extract_data() {
-        foreach ($this->file_contents as $line) {
-            $fields = explode(' ', $line);
-            $this->ids_to_grades[$fields[0]] = $fields[1];
-        }
-    }
 }
 
 // Insane Fixed width grade file.
 // 89XXXXXXX anything you want in here 100.00
 // 89XXXXXXX i mean anything 090.00
-class SmartFileInsane extends SmartFileBase {
+// 89XXXXXXX except, and I mean this: more than one comma (,)
+class SmartFileInsane extends SmartFile_GradeEnd_extractor {
     protected $field = 'idnumber';
-
-    static function validate_line($line) {
+    public $separator = ' ';
+    
+    public function validate_line($line) {
         if (smart_is_lsuid2(substr($line, 0, 9))) {
             if (count(explode(' ', $line)) > 2) {
                 if (count(explode(',', $line)) > 2) {
@@ -219,22 +226,17 @@ class SmartFileInsane extends SmartFileBase {
         return False;
     }
 
-    function extract_data() {
-        foreach ($this->file_contents as $line) {
-            $fields = explode(' ', $line);
-            $this->ids_to_grades[$fields[0]] = trim(end($fields));
-        }
-    }
 }
 
 
 // Grade file from the Measurement and Evaluation Center
 // XXX89XXXXXXX 100.00
 // XXX89XXXXXXX  90.00
-class SmartFileMEC extends SmartFileBase {
+class SmartFileMEC extends SmartFile_GradeEnd_extractor {
     protected $field = 'idnumber';
-
-    static function validate_line($line) {
+    public $separator = ' ';
+    
+    public function validate_line($line) {
         if (smart_is_mec_lsuid(substr($line, 0, 12))) {
             if (count(explode(' ', $line)) >= 2) {
                 return True;
@@ -245,62 +247,46 @@ class SmartFileMEC extends SmartFileBase {
 
         return False;
     }
-
-    function extract_data() {
-        foreach ($this->file_contents as $line) {
-            $fields = explode(' ', $line);
-            $this->ids_to_grades[substr($fields[0], 3, 9)] = trim(end($fields));
-        }
-    }
 }
 
 // Grade file for LAW students being graded with an anonymous number
 // XXXX,100.00
 // XXXX, 90.00
-class SmartFileAnonymous extends SmartFileBase {
+class SmartFileAnonymous extends SmartFile_GradeEnd_extractor {
     protected $field = 'anonymous';
-
-    static function validate_line($line) {
+    public $separator = ',';
+    
+    public function validate_line($line) {
         $fields = array_map('trim', explode(',', $line));
-        return smart_is_anon_num($fields[0]) && is_grade($fields[1]) && count($fields) == 2;
+        return smart_is_anon_num($fields[0]) && smart_is_grade($fields[1]) && count($fields) == 2;
     }
 
-    function extract_data() {
-        foreach ($this->file_contents as $line) {
-            $fields = explode(',', $line);
-            $this->ids_to_grades[$fields[0]] = trim($fields[1]);
-        }
-    }
 }
 
 // Tab-delimited grade file keyed with lsuid that contains extra information
 // 89XXXXXXX    F,  L   M   shortname   data    time    XX  XX  100.00
 // 89XXXXXXX    F,  L   M   shortname   data    time    XX  XX  90.00
-class SmartFileTabLongLsuid extends SmartFileBase {
+class SmartFileTabLongLsuid extends SmartFile_GradeEnd_extractor {
     protected $field = 'idnumber';
-
-    static function validate_line($line) {
+    public $separator = "\t";
+    
+    public function validate_line($line) {
         $tabs = explode("\t", $line);
         $n = count($tabs);
 
         return smart_is_lsuid2($tabs[0]) && smart_is_grade($tabs[$n - 1]) && $n > 2;
     }
 
-    function extract_data() {
-        foreach ($this->file_contents as $line) {
-            $fields = explode("\t", $line);
-            $this->ids_to_grades[$fields[0]] = trim(end($fields));
-        }
-    }
 }
 
 // Tab-delimited grade file keyed with pawsid 
 // pawsid   100.00
 // pawsid   90.00
-class SmartFileTabShortPawsid extends SmartFileBase {
+class SmartFileTabShortPawsid extends SmartFile_GradeEnd_extractor {
     protected $field = 'username';
-
-    static function validate_line($line) {
+    public $separator = "\t";
+    
+    public function validate_line($line) {
         $tabs = explode("\t", $line);
 
         if (count($tabs) < 2) {
@@ -309,33 +295,19 @@ class SmartFileTabShortPawsid extends SmartFileBase {
 
         return smart_is_pawsid($tabs[0]) && smart_is_grade($tabs[1]) && count($tabs) == 2;
     }
-
-    function extract_data() {
-        foreach ($this->file_contents as $line) {
-            $fields = explode("\t", $line);
-            $this->ids_to_grades[$fields[0]] = trim($fields[1]);
-        }
-    }
 }
 
 // Tab-delimited grade file keyed with pawsid that contains extra information
 // pawsid    F,  L   M   shortname   data    time    XX  XX  100.00
 // pawsid    F,  L   M   shortname   data    time    XX  XX  90.00
-class SmartFileTabLongPawsid extends SmartFileBase {
+class SmartFileTabLongPawsid extends SmartFile_GradeEnd_extractor {
     protected $field = 'username';
-
-    static function validate_line($line) {
+    public $separator = "\t";
+    public function validate_line($line) {
         $tabs = explode("\t", $line);
         $n = count($tabs);
 
         return smart_is_pawsid($tabs[0]) && smart_is_grade($tabs[$n - 1]) && $n > 2;
-    }
-
-    function extract_data() {
-        foreach ($this->file_contents as $line) {
-            $fields = explode("\t", $line);
-            $this->ids_to_grades[$fields[0]] = trim(end($fields));
-        }
     }
 }
 
@@ -343,30 +315,24 @@ class SmartFileTabLongPawsid extends SmartFileBase {
 // Tab-delimited grade file keyed with lsuid 
 // 89XXXXXXX    100.00
 // 89XXXXXXX    90.00
-class SmartFileTabShortLsuid extends SmartFileBase {
+class SmartFileTabShortLsuid extends SmartFile_GradeEnd_extractor {
     protected $field = 'idnumber';
-
-    static function validate_line($line) {
+    public $separator = "\t";
+    
+    public function validate_line($line) {
         $tabs = explode("\t", $line);
-
         return smart_is_lsuid2($tabs[0]) && smart_is_grade($tabs[1]) && count($tabs) == 2;
-    }
-
-    function extract_data() {
-        foreach ($this->file_contents as $line) {
-            $fields = explode("\t", $line);
-            $this->ids_to_grades[$fields[0]] = trim($fields[1]);
-        }
     }
 }
 
 // Grade file with comma-separated values keyed with pawsid
 // pawsid,100.00
 // pawsid,90.00
-class SmartFileCSVPawsid extends SmartFileBase {
+class SmartFileCSVPawsid extends SmartFile_GradeEnd_extractor {
     protected $field = 'username';
-
-    static function validate_line($line) {
+    public $separator = ',';
+    
+    public function validate_line($line) {
         $fields = array_map('trim', explode(',', $line));
 
         if (count($fields) < 2) {
@@ -375,74 +341,49 @@ class SmartFileCSVPawsid extends SmartFileBase {
 
         return smart_is_pawsid($fields[0]) && smart_is_grade($fields[1]) && count($fields) == 2;
     }
-
-    function extract_data() {
-        foreach ($this->file_contents as $line) {
-            $fields = explode(',', $line);
-            $this->ids_to_grades[$fields[0]] = trim($fields[1]);
-        }
-    }
 }
 
 // Grade file with comma-separated values keyed with lsuid 
 // 89XXXXXXX,100.00
 // 89XXXXXXX,90.00
-class SmartFileCSVLsuid extends SmartFileBase {
+class SmartFileCSVLsuid extends SmartFile_GradeEnd_extractor {
     protected $field = 'idnumber';
-
-    static function validate_line($line) {
+    public $separator = ',';
+    
+    public function validate_line($line) {
         $fields = array_map('trim', explode(',', $line));
-
         return smart_is_lsuid2($fields[0]) && smart_is_grade($fields[1]) && count($fields) == 2;
-    }
-
-    function extract_data() {
-        foreach ($this->file_contents as $line) {
-            $fields = explode(',', $line);
-            $this->ids_to_grades[$fields[0]] = trim($fields[1]);
-        }
     }
 }
 
 // Comma seperated grade file keyed with lsuid that contains extra information
+// Must have more than two fields, the first must be idnumber, the last must be grade
 // 89XXXXXXX,    F,  L,   M,   shortname,   data,    time,    XX,  XX,  100.00
 // 89XXXXXXX,    F,  L,   M,   shortname,   data,    time,    XX,  XX,  90.00
-class SmartFileCommaLongLsuid extends SmartFileBase {
+class SmartFileCommaLongLsuid extends SmartFile_GradeEnd_extractor {
     protected $field = 'idnumber';
-
-    static function validate_line($line) {
+    public $separator = ',';
+    
+    public function validate_line($line) {
         $commas = explode(',', $line);
         $n = count($commas);
 
         return smart_is_lsuid2($commas[0]) && smart_is_grade($commas[$n - 1]) && $n > 2;
-    }
-
-    function extract_data() {
-        foreach ($this->file_contents as $line) {
-            $fields = explode(",", $line);
-            $this->ids_to_grades[$fields[0]] = trim(end($fields));
-        }
     }
 }
 
 // Comma seperated grade file keyed with pawsid that contains extra information
 // pawsid,    F,  L,   M,   shortname,   data,    time,    XX,  XX,  100.00
 // pawsid,    F,  L,   M,   shortname,   data,    time,    XX,  XX,  90.00
-class SmartFileCommaLongPawsid extends SmartFileBase {
+class SmartFileCommaLongPawsid extends SmartFile_GradeEnd_extractor {
     protected $field = 'username';
-
-    static function validate_line($line) {
+    public $separator = ',';
+    
+    public function validate_line($line) {
         $commas = explode(',', $line);
         $n = count($commas);
 
         return smart_is_pawsid($commas[0]) && smart_is_grade($commas[$n - 1]) && $n > 2;
-    }
-
-    function extract_data() {
-        foreach ($this->file_contents as $line) {
-            $fields = explode(",", $line);
-            $this->ids_to_grades[$fields[0]] = trim(end($fields));
-        }
     }
 }
 
@@ -463,7 +404,7 @@ class SmartFileMaple extends SmartFileBase {
         $this->file_contents =  array_slice($lines, 2, count($lines) - 4);
     }
 
-    static function validate_line($line) {
+    public function validate_line($line) {
         $fields = explode(',', $line);
 
         return count($fields) == 6 && smart_is_lsuid2($fields[1]) && is_numeric($fields[3]);
@@ -484,7 +425,7 @@ class SmartFileMaple extends SmartFileBase {
 class SmartFileKeypadidCSV extends SmartFileBase {
     protected $field = 'user_keypadid';
 
-    static function validate_line($line) {
+    public function validate_line($line) {
         $fields = explode(',', $line);
 
         return count($fields) == 2 && smart_is_keypadid($fields[0]) && is_numeric($fields[1]);
@@ -506,7 +447,7 @@ class SmartFileKeypadidCSV extends SmartFileBase {
 class SmartFileKeypadidTabbed extends SmartFileBase {
     protected $field = 'user_keypadid';
 
-    static function validate_line($line) {
+    public function validate_line($line) {
         $fields = preg_split('/\s+/', $line);
 
         return count($fields) == 2 && smart_is_keypadid($fields[0]) && is_numeric($fields[1]);
