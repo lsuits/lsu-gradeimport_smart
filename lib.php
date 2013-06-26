@@ -8,60 +8,29 @@ function smart_autodiscover_filetype($file) {
     $lines = smart_split_file($file);
     $line = $lines[0];
 
-    if (SmartFileKeypadidCSV::validate_line($line)) {
-        return new SmartFileKeypadidCSV($file);
-    }
-
-    if (SmartFileKeypadidTabbed::validate_line($line)) {
-        return new SmartFileKeypadidTabbed($file);
-    }
-
-    if (SmartFileFixed::validate_line($line)) {
-        return new SmartFileFixed($file);
-    }
-
-    if (SmartFileInsane::validate_line($line)) {
-        return new SmartFileInsane($file);
-    }
-
-    if (SmartFileCommaLongLsuid::validate_line($line)) {
-        return new SmartFileCommaLongLsuid($file);
-    }
-
-    if (SmartFileCommaLongPawsid::validate_line($line)) {
-        return new SmartFileCommaLongPawsid($file);
-    }
-
-    if (SmartFileTabLongLsuid::validate_line($line)) {
-        return new SmartFileTabLongLsuid($file);
-    }
-
-    if (SmartFileTabLongPawsid::validate_line($line)) {
-        return new SmartFileTabLongPawsid($file);
-    }
-
-    if (SmartFileTabShortLsuid::validate_line($line)) {
-        return new SmartFileTabShortLsuid($file);
-    }
-
-    if (SmartFileCSVLsuid::validate_line($line)) {
-        return new SmartFileCSVLsuid($file);
-    }
-
-    if (SmartFileMEC::validate_line($line)) {
-        return new SmartFileMEC($file);
-    }
-
-    if (SmartFileTabShortPawsid::validate_line($line)) {
-        return new SmartFileTabShortPawsid($file);
-    }
-
-    if (SmartFileAnonymous::validate_line($line)) {
-        return new SmartFileAnonymous($file);
-    }
-
-    if (SmartFileCSVPawsid::validate_line($line)) {
-        return new SmartFileCSVPawsid($file);
+    $filetypes = array(
+        'SmartFileKeypadidCSV',
+        'SmartFileKeypadidTabbed',
+        'SmartFileFixed',
+        'SmartFileInsane',
+        'SmartFileCommaLongLsuid',
+        'SmartFileCommaLongPawsid',
+        'SmartFileTabLongLsuid',
+        'SmartFileTabLongPawsid',
+        'SmartFileTabShortLsuid',
+        'SmartFileCSVLsuid',
+        'SmartFileMEC',
+        'SmartFileTabShortPawsid',
+        'SmartFileAnonymous',
+        'SmartFileCSVPawsid',
+    );
+  
+    //try the validate_line() method for each
+    foreach($filetypes as $ft){
+        $obj = new $ft('');
+        if($obj->validate_line($line)){
+            return new $ft($file);
+        }
     }
 
     if (count($lines) >= 3 && SmartFileMaple::validate_line($lines[2])) {
