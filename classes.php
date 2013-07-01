@@ -172,9 +172,17 @@ abstract class SmartFileBase {
     abstract protected function extract_data();
 }
 
-abstract class SmartFile_GradeEnd_extractor extends SmartFileBase{
+/**
+ * groups clients using the common extractor method below
+ * @TODO a few more levels in the class hierarchy here could 
+ * really clean things up ...
+ */
+abstract class SmartFile_GradeEnd_simpleSeparator extends SmartFileBase{
     public $separator;
     
+    /**
+     * bare generalization
+     */
     protected function extract_data() {
         foreach ($this->file_contents as $line) {
             $fields = explode($this->separator, $line);
@@ -183,10 +191,22 @@ abstract class SmartFile_GradeEnd_extractor extends SmartFileBase{
     }
 }
 
+abstract class SmartFile_GradeEnd_regexSeparator extends SmartFile_GradeEnd_simpleSeparator{
+    /**
+     * uses preg_split versus explode
+     */
+    protected function extract_data() {
+        foreach ($this->file_contents as $line) {
+            $fields = preg_split($this->separator, $line);
+            $this->ids_to_grades[$fields[0]] = trim(end($fields));
+        }
+    }
+}
+
 // Fixed width grade file.
 // 89XXXXXXX 100.00
 // 89XXXXXXX 090.00
-class SmartFileFixed extends SmartFile_GradeEnd_extractor {
+class SmartFileFixed extends SmartFile_GradeEnd_simpleSeparator {
     protected $field = 'idnumber';
     public $separator = ' ';
     
@@ -207,7 +227,7 @@ class SmartFileFixed extends SmartFile_GradeEnd_extractor {
 // 89XXXXXXX anything you want in here 100.00
 // 89XXXXXXX i mean anything 090.00
 // 89XXXXXXX except, and I mean this: more than one comma (,)
-class SmartFileInsane extends SmartFile_GradeEnd_extractor {
+class SmartFileInsane extends SmartFile_GradeEnd_simpleSeparator {
     protected $field = 'idnumber';
     public $separator = ' ';
     
@@ -232,7 +252,7 @@ class SmartFileInsane extends SmartFile_GradeEnd_extractor {
 // Grade file from the Measurement and Evaluation Center
 // XXX89XXXXXXX 100.00
 // XXX89XXXXXXX  90.00
-class SmartFileMEC extends SmartFile_GradeEnd_extractor {
+class SmartFileMEC extends SmartFile_GradeEnd_simpleSeparator {
     protected $field = 'idnumber';
     public $separator = ' ';
     
@@ -252,7 +272,7 @@ class SmartFileMEC extends SmartFile_GradeEnd_extractor {
 // Grade file for LAW students being graded with an anonymous number
 // XXXX,100.00
 // XXXX, 90.00
-class SmartFileAnonymous extends SmartFile_GradeEnd_extractor {
+class SmartFileAnonymous extends SmartFile_GradeEnd_simpleSeparator {
     protected $field = 'anonymous';
     public $separator = ',';
     
@@ -266,7 +286,7 @@ class SmartFileAnonymous extends SmartFile_GradeEnd_extractor {
 // Tab-delimited grade file keyed with lsuid that contains extra information
 // 89XXXXXXX    F,  L   M   shortname   data    time    XX  XX  100.00
 // 89XXXXXXX    F,  L   M   shortname   data    time    XX  XX  90.00
-class SmartFileTabLongLsuid extends SmartFile_GradeEnd_extractor {
+class SmartFileTabLongLsuid extends SmartFile_GradeEnd_simpleSeparator {
     protected $field = 'idnumber';
     public $separator = "\t";
     
@@ -282,7 +302,7 @@ class SmartFileTabLongLsuid extends SmartFile_GradeEnd_extractor {
 // Tab-delimited grade file keyed with pawsid 
 // pawsid   100.00
 // pawsid   90.00
-class SmartFileTabShortPawsid extends SmartFile_GradeEnd_extractor {
+class SmartFileTabShortPawsid extends SmartFile_GradeEnd_simpleSeparator {
     protected $field = 'username';
     public $separator = "\t";
     
@@ -300,7 +320,7 @@ class SmartFileTabShortPawsid extends SmartFile_GradeEnd_extractor {
 // Tab-delimited grade file keyed with pawsid that contains extra information
 // pawsid    F,  L   M   shortname   data    time    XX  XX  100.00
 // pawsid    F,  L   M   shortname   data    time    XX  XX  90.00
-class SmartFileTabLongPawsid extends SmartFile_GradeEnd_extractor {
+class SmartFileTabLongPawsid extends SmartFile_GradeEnd_simpleSeparator {
     protected $field = 'username';
     public $separator = "\t";
     public function validate_line($line) {
@@ -315,7 +335,7 @@ class SmartFileTabLongPawsid extends SmartFile_GradeEnd_extractor {
 // Tab-delimited grade file keyed with lsuid 
 // 89XXXXXXX    100.00
 // 89XXXXXXX    90.00
-class SmartFileTabShortLsuid extends SmartFile_GradeEnd_extractor {
+class SmartFileTabShortLsuid extends SmartFile_GradeEnd_simpleSeparator {
     protected $field = 'idnumber';
     public $separator = "\t";
     
@@ -328,7 +348,7 @@ class SmartFileTabShortLsuid extends SmartFile_GradeEnd_extractor {
 // Grade file with comma-separated values keyed with pawsid
 // pawsid,100.00
 // pawsid,90.00
-class SmartFileCSVPawsid extends SmartFile_GradeEnd_extractor {
+class SmartFileCSVPawsid extends SmartFile_GradeEnd_simpleSeparator {
     protected $field = 'username';
     public $separator = ',';
     
@@ -346,7 +366,7 @@ class SmartFileCSVPawsid extends SmartFile_GradeEnd_extractor {
 // Grade file with comma-separated values keyed with lsuid 
 // 89XXXXXXX,100.00
 // 89XXXXXXX,90.00
-class SmartFileCSVLsuid extends SmartFile_GradeEnd_extractor {
+class SmartFileCSVLsuid extends SmartFile_GradeEnd_simpleSeparator {
     protected $field = 'idnumber';
     public $separator = ',';
     
@@ -360,7 +380,7 @@ class SmartFileCSVLsuid extends SmartFile_GradeEnd_extractor {
 // Must have more than two fields, the first must be idnumber, the last must be grade
 // 89XXXXXXX,    F,  L,   M,   shortname,   data,    time,    XX,  XX,  100.00
 // 89XXXXXXX,    F,  L,   M,   shortname,   data,    time,    XX,  XX,  90.00
-class SmartFileCommaLongLsuid extends SmartFile_GradeEnd_extractor {
+class SmartFileCommaLongLsuid extends SmartFile_GradeEnd_simpleSeparator {
     protected $field = 'idnumber';
     public $separator = ',';
     
@@ -375,7 +395,7 @@ class SmartFileCommaLongLsuid extends SmartFile_GradeEnd_extractor {
 // Comma seperated grade file keyed with pawsid that contains extra information
 // pawsid,    F,  L,   M,   shortname,   data,    time,    XX,  XX,  100.00
 // pawsid,    F,  L,   M,   shortname,   data,    time,    XX,  XX,  90.00
-class SmartFileCommaLongPawsid extends SmartFile_GradeEnd_extractor {
+class SmartFileCommaLongPawsid extends SmartFile_GradeEnd_simpleSeparator {
     protected $field = 'username';
     public $separator = ',';
     
@@ -422,44 +442,30 @@ class SmartFileMaple extends SmartFileBase {
 // Grade file with comma-separated values keyed with keypadid
 // 170E98,30
 // 1718C0,80
-class SmartFileKeypadidCSV extends SmartFileBase {
+class SmartFileKeypadidCSV extends SmartFile_GradeEnd_simpleSeparator {
     protected $field = 'user_keypadid';
-
+    public $separator = ',';
+    
     public function validate_line($line) {
         $fields = explode(',', $line);
 
         return count($fields) == 2 && smart_is_keypadid($fields[0]) && is_numeric($fields[1]);
     }
-
-    function extract_data() {
-        foreach ($this->file_contents as $line) {
-            $fields = explode(',', $line);
-            $this->ids_to_grades[$fields[0]] = $fields[1];
-        }
-    }
-
 }
 
 
 // Grade file with tabbed or spaced values keyed with keypadid
 // 170E98  30
 // 1718C0  80
-class SmartFileKeypadidTabbed extends SmartFileBase {
+class SmartFileKeypadidTabbed extends SmartFile_GradeEnd_regexSeparator {
     protected $field = 'user_keypadid';
-
+    public $separator = '/\s+/';
+    
     public function validate_line($line) {
         $fields = preg_split('/\s+/', $line);
 
         return count($fields) == 2 && smart_is_keypadid($fields[0]) && is_numeric($fields[1]);
     }
-
-    function extract_data() {
-        foreach ($this->file_contents as $line) {
-            $fields = preg_split('/\s+/', $line);
-            $this->ids_to_grades[$fields[0]] = $fields[1];
-        }
-    }
-
 }
 
 ?>
