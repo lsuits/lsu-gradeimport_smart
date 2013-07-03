@@ -211,7 +211,7 @@ class SmartFileFixed extends SmartFile_GradeEnd_simpleSeparator {
     public $separator = ' ';
     
     public function validate_line($line) {
-        if (smart_is_lsuid2(substr($line, 0, 9))) {
+        if (matcher::match('lsuid2',substr($line, 0, 9))) {
             if (strlen(trim($line)) == 16 && count(explode(' ', $line)) == 2) {
                 return True;
             }
@@ -232,7 +232,7 @@ class SmartFileInsane extends SmartFile_GradeEnd_simpleSeparator {
     public $separator = ' ';
     
     public function validate_line($line) {
-        if (smart_is_lsuid2(substr($line, 0, 9))) {
+        if (matcher::match('lsuid2',substr($line, 0, 9))) {
             if (count(explode(' ', $line)) > 2) {
                 if (count(explode(',', $line)) > 2) {
                     return False;
@@ -465,6 +465,29 @@ class SmartFileKeypadidTabbed extends SmartFile_GradeEnd_regexSeparator {
         $fields = preg_split('/\s+/', $line);
 
         return count($fields) == 2 && smart_is_keypadid($fields[0]) && is_numeric($fields[1]);
+    }
+}
+
+class matcher{
+    static $patterns = array(
+        'lsuid2'    => '/^89\d{7}$/',
+        'mec_lsuid' => '/^...89\d{7}$/',
+        'grade'     => '/^\d{1,3}?$/',
+        'anon_num'  => '/^\d{4}$/',
+        'pawsid'    => '/^[a-zA-Z0-9\-]{1,16}$/',
+        'keypadid'  => '/^[A-Z0-9]{6}$/',
+    );
+    /**
+     * 
+     * @param string $key the regex with which to match
+     * @param string $string the string to search
+     * @return bool
+     */
+    public static function match($key,$string){
+        if(!array_key_exists($key, self::$patterns)){
+            throw new moodle_exception('invalid key requested in call to match()');
+        }
+        return preg_match(self::$patterns[$key], $string);
     }
 }
 
