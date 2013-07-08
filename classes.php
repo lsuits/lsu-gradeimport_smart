@@ -167,7 +167,7 @@ abstract class SmartFileBase {
         return true;
     }
 
-    abstract public static function validate_line($line);
+    public static function validate_line($line){}
 
     abstract protected function extract_data();
 }
@@ -262,7 +262,7 @@ class SmartFileAnonymous extends SmartFileBase {
 
     static function validate_line($line) {
         $fields = array_map('trim', explode(',', $line));
-        return smart_is_anon_num($fields[0]) && is_grade($fields[1]) && count($fields) == 2;
+        return smart_is_anon_num($fields[0]) && smart_is_grade($fields[1]) && count($fields) == 2;
     }
 
     function extract_data() {
