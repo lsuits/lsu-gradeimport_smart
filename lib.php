@@ -108,7 +108,7 @@ function smart_is_anon_num($s) {
     return preg_match('/^\d{4}$/', $s);
 }
 
-// Checks wheter or not a string is a valid pawsid. It must be 1-16 and contain
+// Checks whether or not a string is a valid pawsid. It must be 1-16 and contain
 // only alphanumeric characters including hyphens.
 function smart_is_pawsid($s) {
     return preg_match('/^[a-zA-Z0-9\-]{1,16}$/', $s);
