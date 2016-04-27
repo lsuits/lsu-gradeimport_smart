@@ -61,8 +61,12 @@ abstract class SmartFileBase {
         global $DB;
 
         $strings = function($id) { return "'$id'"; };
+        $role_users = array();
 
-        $role_users = get_role_users($roleids, $context, false);
+        foreach ($roleids as $roleid) {
+            $role_users = $role_users + get_role_users($roleid, $context, false);
+        }
+
         $role_userids = implode(',', array_keys($role_users));
 
         $keyids = array_keys($this->ids_to_grades);
@@ -84,20 +88,24 @@ abstract class SmartFileBase {
     // Takes $ids_to_grades and fills $moodle_ids_to_grades.
     public function convert_ids() {
         global $CFG;
-
+        
         $roleids = explode(',', $CFG->gradebookroles);
 
         $context = context_course::instance($this->courseid);
 
         $moodle_ids_to_field = array();
 
+        $userfields = 'u.id, u.username, ' . get_all_user_name_fields(true, 'u');
+        $users = array();
+
         // Keypadid temp fix
         if ($this->get_field() == 'user_keypadid') {
             $users = $this->get_keypad_users($roleids, $context);
         } else {
-            $users = get_role_users($roleids, $context, false);
+            foreach ($roleids as $roleid) {
+                $users = $users + get_role_users($roleid, $context, false);
+            }
         }
-
         foreach ($users as $k => $v) {
             $field = $this->get_field();
             $moodle_ids_to_field[$k] = $v->$field;
