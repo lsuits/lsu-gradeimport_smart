@@ -485,6 +485,31 @@ class SmartFileMaple extends SmartFileBase {
     }
 }
 
+// Grade file from the turning software package
+// Irrelevant line
+// LSU Email, Grade
+// LSU Email, Grade
+class SmartFileTurning extends SmartFileBase {
+    protected $field = 'email';
+
+    function __construct($file_contents) {
+        $lines = smart_split_file($file_contents);
+        $this->file_contents =  array_slice($lines, 1, count($lines) - 1);
+    }
+
+    static function validate_line($line) {
+        $fields = explode(',', $line);
+
+        return count($fields) == 2 && smart_is_email($fields[0]) && is_numeric($fields[1]);
+    }
+
+    function extract_data() {
+        foreach ($this->file_contents as $line) {
+            $fields = explode(',', $line);
+            $this->ids_to_grades[$fields[0]] = trim($fields[1]);
+        }
+    }
+}
 
 // Grade file with comma-separated values keyed with keypadid
 // 170E98,30

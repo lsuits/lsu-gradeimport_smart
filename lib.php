@@ -60,6 +60,10 @@ function smart_autodiscover_filetype($file) {
         return new SmartFileAnonymous($file);
     }
 
+    if (count($lines) >= 2 && SmartFileTurning::validate_line($lines[1])) {
+        return new SmartFileTurning($file);
+    }
+
     if (SmartFileCSVPawsid::validate_line($line)) {
         return new SmartFileCSVPawsid($file);
     }
@@ -87,6 +91,13 @@ function smart_split_file($file) {
 // digit number that starts with 89 to pass.
 function smart_is_lsuid2($s) {
     return preg_match('/^89\d{7}$/', $s);
+}
+
+// Checks whether or not a string is a valid LSU Email address. 
+// It must contain a valid pawsid and end in @(valid domain name - community and agcenter prohibit limiting this)
+// A valid pawsid must be 1-16 and contain only alphanumeric characters including hyphens.
+function smart_is_email($s) {
+    return preg_match('/^[a-zA-Z0-9\-]{1,16}@[a-zA-Z0-9\-]{1,32}\.[a-zA-Z0-9\-]{2,3}/', $s);
 }
 
 // Checks whether or not a string is a valid MEC LSUID. It must be a twelve digit
