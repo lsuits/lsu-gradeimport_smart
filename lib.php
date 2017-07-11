@@ -60,6 +60,10 @@ function smart_autodiscover_filetype($file) {
         return new SmartFileAnonymous($file);
     }
 
+    if (count($lines) >= 1 && SmartFileEmail::validate_line($lines[0])) {
+        return new SmartFileEmail($file);
+    }
+
     if (count($lines) >= 2 && SmartFileTurning::validate_line($lines[1])) {
         return new SmartFileTurning($file);
     }
